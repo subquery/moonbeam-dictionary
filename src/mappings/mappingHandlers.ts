@@ -4,41 +4,38 @@ import { SpecVersion, Event, Extrinsic, EvmLog as EvmLogModel, EvmTransaction } 
 import { MoonbeamCall } from "@subql/contract-processors/dist/moonbeam";
 import { inputToFunctionSighash, isZero } from "../utils";
 
-
+let specVersion: SpecVersion;
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
-    const specVersion = await SpecVersion.get(block.specVersion.toString());
-    if(specVersion === undefined){
-        const newSpecVersion = new SpecVersion(block.specVersion.toString());
-        newSpecVersion.blockHeight = block.block.header.number.toBigInt();
-        await newSpecVersion.save();
+    if (!specVersion) {
+        specVersion = await SpecVersion.get(block.specVersion.toString());
+    }
+
+    if(!specVersion || specVersion.id !== block.specVersion.toString()){
+        specVersion = new SpecVersion(block.specVersion.toString());
+        specVersion.blockHeight = block.block.header.number.toBigInt();
+        await specVersion.save();
     }
 }
 
 export async function handleEvent(event: SubstrateEvent): Promise<void> {
-    const thisEvent = await Event.get(`${event.block.block.header.number}-${event.idx.toString()}`);
-    if(thisEvent === undefined){
-        const newEvent = new Event(`${event.block.block.header.number}-${event.idx.toString()}`);
-        newEvent.blockHeight = event.block.block.header.number.toBigInt();
-        newEvent.module = event.event.section;
-        newEvent.event = event.event.method;
-        await newEvent.save();
-    }
+    const newEvent = new Event(`${event.block.block.header.number}-${event.idx.toString()}`);
+    newEvent.blockHeight = event.block.block.header.number.toBigInt();
+    newEvent.module = event.event.section;
+    newEvent.event = event.event.method;
+    await newEvent.save();
     if (event.event.section === 'evm' && event.event.method === 'Log') {
         await handleEvmEvent(event);
     }
 }
 
 export async function handleCall(extrinsic: SubstrateExtrinsic): Promise<void> {
-    const thisExtrinsic = await Extrinsic.get(extrinsic.extrinsic.hash.toString());
-    if(thisExtrinsic === undefined){
-        const newExtrinsic = new Extrinsic(extrinsic.extrinsic.hash.toString());
-        newExtrinsic.module = extrinsic.extrinsic.method.section;
-        newExtrinsic.call = extrinsic.extrinsic.method.method;
-        newExtrinsic.blockHeight = extrinsic.block.block.header.number.toBigInt();
-        newExtrinsic.success = extrinsic.success;
-        newExtrinsic.isSigned = extrinsic.extrinsic.isSigned;
-        await newExtrinsic.save();
-    }
+    const newExtrinsic = new Extrinsic(extrinsic.extrinsic.hash.toString());
+    newExtrinsic.module = extrinsic.extrinsic.method.section;
+    newExtrinsic.call = extrinsic.extrinsic.method.method;
+    newExtrinsic.blockHeight = extrinsic.block.block.header.number.toBigInt();
+    newExtrinsic.success = extrinsic.success;
+    newExtrinsic.isSigned = extrinsic.extrinsic.isSigned;
+    await newExtrinsic.save();
 }
 
 async function handleEvmEvent(event: SubstrateEvent): Promise<void> {
