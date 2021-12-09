@@ -1,8 +1,9 @@
-import {EvmLog} from "@polkadot/types/interfaces"
+import {EventRecord, EvmLog} from "@polkadot/types/interfaces"
 import {SubstrateExtrinsic,SubstrateEvent,SubstrateBlock} from "@subql/types";
 import { SpecVersion, Event, Extrinsic, EvmLog as EvmLogModel, EvmTransaction } from "../types";
 import { MoonbeamCall } from "@subql/contract-processors/dist/moonbeam";
 import { inputToFunctionSighash, isZero } from "../utils";
+import { wrapExtrinsics } from "./utils";
 
 let specVersion: SpecVersion;
 export async function handleBlock(block: SubstrateBlock): Promise<void> {
@@ -15,17 +16,22 @@ export async function handleBlock(block: SubstrateBlock): Promise<void> {
         specVersion.blockHeight = block.block.header.number.toBigInt();
         await specVersion.save();
     }
+
+    await Promise.all(block.events.map((evt, idx)=>handleEvent(block.block.header.number.toString(), idx, evt)));
+
+    await Promise.all(wrapExtrinsics(block).map(handleCall));
 }
 
-export async function handleEvent(event: SubstrateEvent): Promise<void> {
-    const newEvent = new Event(`${event.block.block.header.number}-${event.idx.toString()}`);
-    newEvent.blockHeight = event.block.block.header.number.toBigInt();
+export async function handleEvent(blockNumber: string, eventIdx: number, event: EventRecord): Promise<void> {
+    const newEvent = new Event(`${blockNumber}-${eventIdx}`);
+    newEvent.blockHeight = BigInt(blockNumber);
     newEvent.module = event.event.section;
     newEvent.event = event.event.method;
-    await newEvent.save();
+    const p = [newEvent.save()];
     if (event.event.section === 'evm' && event.event.method === 'Log') {
-        await handleEvmEvent(event);
+        p.push(handleEvmEvent(blockNumber, eventIdx, event));
     }
+    await Promise.all(p);
 }
 
 export async function handleCall(extrinsic: SubstrateExtrinsic): Promise<void> {
@@ -38,12 +44,12 @@ export async function handleCall(extrinsic: SubstrateExtrinsic): Promise<void> {
     await newExtrinsic.save();
 }
 
-async function handleEvmEvent(event: SubstrateEvent): Promise<void> {
+async function handleEvmEvent(blockNumber: string, eventIdx: number, event: EventRecord): Promise<void> {
     const [{address, data, topics}] = event.event.data as unknown as [EvmLog];
     const log = EvmLogModel.create({
-        id: `${event.block.block.header.number.toString()}-${event.idx}`,
+        id: `${blockNumber}-${eventIdx}`,
         address: address.toString(),
-        blockHeight: event.block.block.header.number.toBigInt(),
+        blockHeight: BigInt(blockNumber),
         topics0: topics[0].toHex(),
         topics1: topics[1]?.toHex(),
         topics2: topics[2]?.toHex(),
