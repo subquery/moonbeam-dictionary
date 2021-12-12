@@ -19,13 +19,3 @@ dataSources:
       handlers:
         - handler: handleBlock
           kind: substrate/BlockHandler
-
-  - kind: substrate/Moonbeam
-    startBlock: 1
-    processor:
-      file: './node_modules/@subql/contract-processors/dist/moonbeam.js'
-    mapping:
-      file: ./dist/index.js
-      handlers:
-        - handler: handleEvmTransaction
-          kind: substrate/MoonbeamCall
