@@ -25,7 +25,6 @@ services:
       - ./:/app
     command:
       - -f=/app
-      - --local
 
   graphql-engine:
     image: onfinality/subql-query:latest
