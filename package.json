@@ -19,15 +19,19 @@
   ],
   "author": "SubQuery Network",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@polkadot/api": "^6",
-    "@subql/cli": "^0.19.0",
-    "@subql/types": "^0.13.0",
-    "@subql/contract-processors": "0.4.1",
-    "moonbeam-types-bundle": "^2.0.3",
-    "typescript": "4.3.2"
+  "resolutions": {
+    "@polkadot/api": "^7.12.1",
+    "@polkadot/types": "^7.12.1",
+    "@polkadot/util": "^8.5.1"
   },
-  "exports": {
-    "chaintypes": "src/chaintypes.ts"
+  "dependencies": {
+    "moonbeam-types-bundle": "^2.0.3"
+  },
+  "devDependencies": {
+    "@polkadot/api": "^7.12.1",
+    "@subql/cli": "^0.22.0",
+    "@subql/contract-processors": "^0.5.3",
+    "@subql/types": "^0.14.0",
+    "typescript": "^4.6.2"
   }
 }
