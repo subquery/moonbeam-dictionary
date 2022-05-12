@@ -4,10 +4,10 @@ version: 0.1.0
 runner:
   node:
     name: '@subql/node'
-    version: '*'
+    version: '>=1.0.0'
   query:
     name: '@subql/query'
-    version: '*'
+    version: '>=1.0.0'
 description: ''
 repository: ''
 schema:
